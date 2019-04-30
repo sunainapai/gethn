@@ -1,0 +1,8 @@
+*.sw?
+*.pyc
+__pycache__/
+myhn.egg-info/
+build/
+dist/
+venv
+testvenv
