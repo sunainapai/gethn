@@ -1,58 +1,77 @@
+# Set up development environment.
+
 venv: FORCE
 	rm -rf ~/.venv/myhn venv
 	python3 -m venv ~/.venv/myhn
 	echo . ~/.venv/myhn/bin/activate > venv
-	. ./venv && pip3 install -r requirements.txt
 
-test: FORCE
+deps: FORCE
+	touch venv
+	. ./venv && pip install -r requirements.txt
+
+
+# Check.
+
+lint: FORCE
 	. ./venv && isort --diff --quiet
 	. ./venv && pylama
-	. ./venv && python3 -m unittest -v
 
-coverage:
+test: FORCE
+	. ./venv && python -m unittest -v
+
+coverage: FORCE
 	. ./venv && coverage run --branch -m unittest -v
 	. ./venv && coverage report --show-missing
 	. ./venv && coverage html
 
+checks: lint test coverage dist
+
+
+
+# Package.
+
 dist: clean
-	. ./venv && python3 setup.py sdist bdist_wheel
-
-fakedist: clean
-	. ./venv && python3 setup.py
-
-upload: dist
-	. ./venv && twine upload dist/*
+	. ./venv && python setup.py sdist bdist_wheel
 
 test-upload: dist
 	. ./venv && twine upload \
 	    --repository-url https://test.pypi.org/legacy/ dist/*
 
-verify-upload: verify-wheel verify-sdist
-
-verify-test-upload: verify-test-wheel verify-test-sdist
+upload: dist
+	. ./venv && twine upload dist/*
 
 test-venv: FORCE
 	rm -rf ~/.venv/testmyhn testvenv
-	python3 -m venv ~/.venv/testmyhn
+	python -m venv ~/.venv/testmyhn
 	echo . ~/.venv/testmyhn/bin/activate > testvenv
 
-verify-wheel: test-venv
-	. ./testvenv && pip3 install myhn
-	. ./testvenv && python3 -m myhn --version
 
-verify-sdist: test-venv
-	. ./testvenv && pip3 install --no-binary :all: myhn
-	. ./testvenv && python3 -m myhn --version
+# Verify package.
 
 verify-test-wheel: test-venv
-	. ./testvenv && pip3 install myhn \
+	. ./testvenv && pip install myhn \
 	    --index-url https://test.pypi.org/simple/
-	. ./testvenv && python3 -m myhn --version
+	. ./testvenv && python -m myhn --version
 
 verify-test-sdist: test-venv
-	. ./testvenv && pip3 install myhn \
+	. ./testvenv && pip install myhn \
 	    --index-url https://test.pypi.org/simple/ --no-binary :all:
-	. ./testvenv && python3 -m myhn --version
+	. ./testvenv && python -m myhn --version
+
+verify-wheel: test-venv
+	. ./testvenv && pip install myhn
+	. ./testvenv && python -m myhn --version
+
+verify-sdist: test-venv
+	. ./testvenv && pip install --no-binary :all: myhn
+	. ./testvenv && python -m myhn --version
+
+verify-test-upload: verify-test-wheel verify-test-sdist
+
+verify-upload: verify-wheel verify-sdist
+
+
+# Clean up.
 
 clean: FORCE
 	rm -rf *.pyc __pycache__
