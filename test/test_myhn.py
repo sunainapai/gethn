@@ -33,3 +33,26 @@ class MyHNTest(unittest.TestCase):
         self.assertEqual(items[1], {"foo": "bar"})
         self.assertEqual(items[2], {"foo": "bar"})
         self.assertEqual(items[3], {"foo": "bar"})
+        self.assertEqual(len(items), 3)
+
+    @mock.patch('urllib.request.urlopen')
+    def test_get_items_limit(self, mock_urlopen):
+        mock_urlopen().read.side_effect = [
+            b'{"submitted": [1, 2, 3]}',
+            b'{"foo": "bar"}',
+            b'{"foo": "bar"}',
+            b'{"foo": "bar"}',
+        ]
+        items = myhn.get_items(None, 2)
+        self.assertEqual(len(items), 2)
+
+    @mock.patch('sys.argv', ['', ''])
+    @mock.patch('urllib.request.urlopen')
+    def test_main(self, mock_urlopen):
+        mock_urlopen().read.side_effect = [
+            b'{"submitted": [1, 2, 3]}',
+            b'{"foo": "bar"}',
+            b'{"foo": "bar"}',
+            b'{"foo": "bar"}',
+        ]
+        myhn.main()

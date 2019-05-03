@@ -9,6 +9,11 @@ test: FORCE
 	. ./venv && pylama
 	. ./venv && python3 -m unittest -v
 
+coverage:
+	. ./venv && coverage run --branch -m unittest -v
+	. ./venv && coverage report --show-missing
+	. ./venv && coverage html
+
 dist: clean
 	. ./venv && python3 setup.py sdist bdist_wheel
 
@@ -52,5 +57,6 @@ verify-test-sdist: test-venv
 clean: FORCE
 	rm -rf *.pyc __pycache__
 	rm -rf build dist myhn.egg-info 
+	rm -rf .coverage htmlcov
 
 FORCE:
