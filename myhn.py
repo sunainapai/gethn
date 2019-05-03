@@ -130,7 +130,6 @@ def get_items(user, limit=0):
 
 def main():
     """Start MyHN."""
-    import sys
     args = _parse_cli()
     items = get_items(args.user, args.limit)
     _write_json('~/.myhn.json', items)
