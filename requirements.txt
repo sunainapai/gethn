@@ -3,3 +3,4 @@ pylama_pylint
 wheel
 twine
 coverage
+sphinx
