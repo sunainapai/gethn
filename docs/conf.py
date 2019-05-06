@@ -24,8 +24,8 @@ templates_path = ['_templates']
 # Exclude patterns relatve to source directory.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
-# The theme to use for HTML and HTML Help pages.
-html_theme = 'alabaster'
+# Let Read the Docs choose its default theme.
+# html_theme = 'alabaster'
 
 # Paths that contain custom static files, relative to this directory.
 html_static_path = ['_static']
