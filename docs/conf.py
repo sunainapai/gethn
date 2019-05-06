@@ -8,6 +8,14 @@ import sys
 # Add module directory to sys.path for autodoc to import the module.
 sys.path.insert(0, os.path.abspath('..'))
 
+# To prevent isort, pycodestyle, and pylint errors, the import statement
+# is placed within try-except block.
+try:
+    import myhn
+except ImportError as e:
+    print('{}: {}'.format(type(e).__name__, str(e)), file=sys.stderr)
+    sys.exit(1)
+
 # Project information
 project = 'MyHN'
 copyright = '2019, Sunaina Pai'
@@ -32,3 +40,7 @@ html_static_path = ['_static']
 
 # To support Sphinx 1.8.5 installed in Travis CI Python 3.4 environment.
 master_doc = 'index'
+
+# Version information.
+version = myhn.__version__.split('.')[2]
+release = myhn.__version__
