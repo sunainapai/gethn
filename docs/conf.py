@@ -29,3 +29,6 @@ html_theme = 'alabaster'
 
 # Paths that contain custom static files, relative to this directory.
 html_static_path = ['_static']
+
+# To support Sphinx 1.8.5 installed in Travis CI Python 3.4 environment.
+master_doc = 'index'

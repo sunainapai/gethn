@@ -24,8 +24,7 @@ coverage: FORCE
 	. ./venv && coverage report --show-missing
 	. ./venv && coverage html
 
-checks: lint test coverage dist
-
+checks: lint test coverage dist docs
 
 
 # Package.
@@ -44,6 +43,15 @@ test-venv: FORCE
 	rm -rf ~/.venv/testmyhn testvenv
 	python -m venv ~/.venv/testmyhn
 	echo . ~/.venv/testmyhn/bin/activate > testvenv
+
+# Document.
+
+docs: FORCE
+	rm -rf docs/api
+	. ./venv && sphinx-apidoc -o docs/api . setup.py test docs
+	. ./venv && cd docs && make html
+	@echo
+	@echo Documentation at docs/_build/html/index.html.
 
 
 # Verify package.
