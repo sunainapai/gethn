@@ -21,9 +21,15 @@ project = 'MyHN'
 copyright = '2019, Sunaina Pai'
 author = 'Sunaina Pai'
 
-# To process `automodule` directive in `.rst` files.
 extensions = [
+    # To process `automodule` directive in `.rst` files.
     'sphinx.ext.autodoc',
+
+    # To support Google style docstrings.
+    'sphinx.ext.napoleon',
+
+    # To add links to Python standard library documentation.
+    'sphinx.ext.intersphinx',
 ]
 
 # Paths that contain templates, relative to this directory.
@@ -44,3 +50,6 @@ master_doc = 'index'
 # Version information.
 version = myhn.__version__.split('.')[2]
 release = myhn.__version__
+
+# To link to Python 3 documentation.
+intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
