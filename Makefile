@@ -29,7 +29,7 @@ checks: lint test coverage dist docs
 
 # Package.
 
-dist: clean
+dist: FORCE
 	. ./venv && python setup.py sdist bdist_wheel
 
 test-upload: dist
