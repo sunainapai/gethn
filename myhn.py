@@ -53,6 +53,8 @@ def _parse_cli():
     """
     parser = argparse.ArgumentParser()
     parser.add_argument('user', help='Hacker News username')
+    parser.add_argument('-c', '--cache', default='~/.myhn.json',
+                        help='path to the cache file')
     parser.add_argument('-l', '--limit', type=int, default=0,
                         help='limit the number of items to pull')
     parser.add_argument('-V', '--version', action='version',
@@ -72,6 +74,7 @@ def _write_json(filename, data):
     path = os.path.expanduser(filename)
     with open(path, 'w') as f:
         json.dump(data, f, indent=2)
+        f.write('\n')
 
 
 def get_item_ids(user):
@@ -132,7 +135,7 @@ def main():
     """Start MyHN."""
     args = _parse_cli()
     items = get_items(args.user, args.limit)
-    _write_json('~/.myhn.json', items)
+    _write_json(args.cache, items)
 
 
 if __name__ == '__main__':
