@@ -35,6 +35,7 @@ __credits__ = ('Hacker News community for great content and exposing '
 
 import argparse
 import json
+import logging
 import os
 import urllib
 import urllib.request
@@ -47,7 +48,7 @@ _ITEM_URL = _BASE_URL + 'item/{}.json'
 def _parse_cli():
     """Parse command line arguments.
 
-    Return:
+    Returns:
         argparse.Namespace: Parsed arguments.
 
     """
@@ -64,17 +65,30 @@ def _parse_cli():
     return args
 
 
-def _write_json(filename, data):
+def _write_json(path, data):
     """Write ``data`` to ``filename`` in JSON format.
 
     Arguments:
-        filename (str): Path to file to write data to.
+        path (str): Path to file to write data to.
         data (dict): Data to write.
     """
-    path = os.path.expanduser(filename)
     with open(path, 'w') as f:
         json.dump(data, f, indent=2)
         f.write('\n')
+
+
+def _read_json(path):
+    """Read JSON file ``filename`` as a dictionary.
+
+    Arguments:
+        path (str): Path to file to read data from.
+
+    Returns:
+        dict: JSON data as dictionary.
+
+    """
+    with open(path) as f:
+        return json.load(f)
 
 
 def get_item_ids(user):
@@ -88,6 +102,7 @@ def get_item_ids(user):
 
     """
     user_url = _USER_URL.format(user)
+    logging.info('Fetching %s', user_url)
     response = urllib.request.urlopen(user_url).read()
     user_info = json.loads(response.decode('utf-8'))
     item_ids = user_info.get('submitted')
@@ -105,27 +120,38 @@ def get_item(item_id):
             ``item_id``.
     """
     item_url = _ITEM_URL.format(item_id)
+    logging.info('Fetching %s', item_url)
     response = urllib.request.urlopen(item_url).read()
     item = json.loads(response.decode('utf-8'))
     return item
 
 
-def get_items(user, limit=0):
+def get_items(user, user_cache, limit=0):
     """Get items for ``user``.
 
     Arguments:
         user (str): Hacker News username.
+        user_cache (dict): Cached items of ``user``.
+        limit (int): Maximum number of items to fetch.
 
     Return:
         dict: Dictionary object that contains item IDs as keys with item
             data as their values.
 
     """
-    item_ids = get_item_ids(user)
-    items = {}
-    for count, item_id in enumerate(item_ids):
+    fetched_item_ids = get_item_ids(user)
+
+    int_keys = [int(key) for key in user_cache.keys()]
+    cached_item_ids = sorted(int_keys, reverse=True)
+    items = user_cache
+    for count, item_id in enumerate(fetched_item_ids):
         if limit == count > 0:
             break
+
+        if item_id in cached_item_ids:
+            logging.info('Found item %d in cache', item_id)
+            continue
+
         item = get_item(item_id)
         items[item_id] = item
     return items
@@ -133,9 +159,23 @@ def get_items(user, limit=0):
 
 def main():
     """Start MyHN."""
+    log_format = ('%(asctime)s %(levelname)s %(module)s:%(lineno)s - '
+                  '%(message)s')
+    date_format = '%Y-%m-%d %H:%M:%S'
+    logging.basicConfig(format=log_format, datefmt=date_format,
+                        level=logging.INFO)
+
     args = _parse_cli()
-    items = get_items(args.user, args.limit)
-    _write_json(args.cache, items)
+    cache_path = os.path.expanduser(args.cache)
+
+    if os.path.exists(cache_path):
+        cache = _read_json(cache_path)
+    else:
+        cache = {}
+
+    user_cache = cache.get(args.user, {})
+    cache[args.user] = get_items(args.user, user_cache, args.limit)
+    _write_json(cache_path, cache)
 
 
 if __name__ == '__main__':
