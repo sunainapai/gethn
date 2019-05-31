@@ -1,5 +1,7 @@
 """Tests for MyHN."""
 
+import json
+import os
 import unittest
 from unittest import mock
 
@@ -8,6 +10,13 @@ import myhn
 
 class MyHNTest(unittest.TestCase):
     """Tests for MyHN."""
+
+    def tearDown(self):
+        if os.path.exists('cache.json'):
+            os.remove('cache.json')
+
+        if os.path.exists('no_cache.json'):
+            os.remove('no_cache.json')
 
     @mock.patch('urllib.request.urlopen')
     def test_get_item_ids(self, mock_urlopen):
@@ -60,49 +69,62 @@ class MyHNTest(unittest.TestCase):
         items = myhn.get_items(None, {}, 2)
         self.assertEqual(len(items), 2)
 
-    @mock.patch('sys.argv', ['', '', '-c', 'non-existent.json'])
+    @mock.patch('sys.argv', ['', 'test_user', '-c', 'no_cache.json'])
     @mock.patch('urllib.request.urlopen')
-    def test_main(self, mock_urlopen):
+    def test_main_no_cache(self, mock_urlopen):
         mock_urlopen().read.side_effect = [
             b'{"submitted": [1, 2, 3]}',
             b'{"foo": "bar"}',
             b'{"foo": "bar"}',
             b'{"foo": "bar"}',
         ]
-        m = mock.mock_open(read_data='{}')
-        with mock.patch('builtins.open', m):
-            myhn.main()
-        m().write.assert_called_with(mock.ANY)
+        myhn.main()
 
-    @mock.patch('sys.argv', ['', '', '-c', 'non-existent.json'])
-    @mock.patch('urllib.request.urlopen')
-    @mock.patch('os.path.exists')
-    def test_main_read_cache(self, mock_path_exists, mock_urlopen):
-        mock_urlopen().read.side_effect = [
-            b'{"submitted": [1, 2, 3]}',
-            b'{"foo": "bar"}',
-            b'{"foo": "bar"}',
-            b'{"foo": "bar"}',
-        ]
-        mock_path_exists.return_value = True
-        m = mock.mock_open(read_data='{}')
-        with mock.patch('builtins.open', m):
-            myhn.main()
-        m().read.assert_called_with()
-        m().write.assert_called_with(mock.ANY)
+        with open('no_cache.json') as f:
+            cache = json.load(f)
 
-    @mock.patch('sys.argv', ['', '', '-c', 'non-existent.json'])
+        self.assertEqual(cache, {
+            'test_user': {
+                '1': {'foo': 'bar'},
+                '2': {'foo': 'bar'},
+                '3': {'foo': 'bar'}
+            }
+        })
+
+    @mock.patch('sys.argv', ['', 'test_user', '-c', 'cache.json'])
     @mock.patch('urllib.request.urlopen')
-    @mock.patch('os.path.exists')
-    def test_main_no_cache(self, mock_path_exists, mock_urlopen):
+    def test_main_read_cache(self, mock_urlopen):
+        cache = {
+            'test_user': {
+                '1': {'foo': 'bar old'}
+            },
+            'extra_user': {
+                '100': {'foo': 'bar old'}
+            }
+        }
+
+        with open('cache.json', 'w') as f:
+            json.dump(cache, f, indent=2)
+
         mock_urlopen().read.side_effect = [
             b'{"submitted": [1, 2, 3]}',
             b'{"foo": "bar"}',
             b'{"foo": "bar"}',
             b'{"foo": "bar"}',
         ]
-        mock_path_exists.return_value = False
-        m = mock.mock_open(read_data='{}')
-        with mock.patch('builtins.open', m):
-            myhn.main()
-        m().write.assert_called_with(mock.ANY)
+
+        myhn.main()
+
+        with open('cache.json') as f:
+            cache = json.load(f)
+
+        self.assertEqual(cache, {
+            'test_user': {
+                '1': {'foo': 'bar old'},
+                '2': {'foo': 'bar'},
+                '3': {'foo': 'bar'}
+            },
+            'extra_user': {
+                '100': {'foo': 'bar old'}
+            }
+        })
