@@ -34,6 +34,7 @@ __credits__ = ('Hacker News community for great content and exposing '
 
 
 import argparse
+import copy
 import json
 import logging
 import os
@@ -126,12 +127,12 @@ def get_item(item_id):
     return item
 
 
-def get_items(user, user_cache, limit=0):
+def get_items(user, user_cache=None, limit=0):
     """Get items for ``user``.
 
     Arguments:
         user (str): Hacker News username.
-        user_cache (dict): Cached items of ``user``.
+        user_cache (dict): ``None`` or Cached items of ``user``.
         limit (int): Maximum number of items to fetch.
 
     Return:
@@ -141,9 +142,13 @@ def get_items(user, user_cache, limit=0):
     """
     fetched_item_ids = get_item_ids(user)
 
-    int_keys = [int(key) for key in user_cache.keys()]
-    cached_item_ids = sorted(int_keys, reverse=True)
-    items = user_cache
+    if user_cache is None:
+        cached_item_ids = []
+        items = {}
+    else:
+        cached_item_ids = sorted(user_cache.keys(), reverse=True)
+        items = copy.deepcopy(user_cache)
+
     for count, item_id in enumerate(fetched_item_ids):
         if limit == count > 0:
             break
@@ -174,6 +179,7 @@ def main():
         cache = {}
 
     user_cache = cache.get(args.user, {})
+    user_cache = {int(key): value for key, value in user_cache.items()}
     cache[args.user] = get_items(args.user, user_cache, args.limit)
     _write_json(cache_path, cache)
 

@@ -28,7 +28,22 @@ class MyHNTest(unittest.TestCase):
     def test_get_item(self, mock_urlopen):
         mock_urlopen().read.return_value = b'{"foo": "bar"}'
         item = myhn.get_item(None)
-        self.assertEqual(item, {"foo": "bar"})
+        self.assertEqual(item, {'foo': 'bar'})
+
+    @mock.patch('urllib.request.urlopen')
+    def test_get_items_empty_cache(self, mock_urlopen):
+        mock_urlopen().read.side_effect = [
+            b'{"submitted": [1, 2, 3]}',
+            b'{"foo": "bar"}',
+            b'{"foo": "bar"}',
+            b'{"foo": "bar"}',
+        ]
+        items = myhn.get_items(None, {})
+        self.assertEqual(items, {
+            1: {'foo': 'bar'},
+            2: {'foo': 'bar'},
+            3: {'foo': 'bar'},
+        })
 
     @mock.patch('urllib.request.urlopen')
     def test_get_items_no_cache(self, mock_urlopen):
@@ -38,11 +53,12 @@ class MyHNTest(unittest.TestCase):
             b'{"foo": "bar"}',
             b'{"foo": "bar"}',
         ]
-        items = myhn.get_items(None, {})
-        self.assertEqual(items[1], {"foo": "bar"})
-        self.assertEqual(items[2], {"foo": "bar"})
-        self.assertEqual(items[3], {"foo": "bar"})
-        self.assertEqual(len(items), 3)
+        items = myhn.get_items(None)
+        self.assertEqual(items, {
+            1: {'foo': 'bar'},
+            2: {'foo': 'bar'},
+            3: {'foo': 'bar'},
+        })
 
     @mock.patch('urllib.request.urlopen')
     def test_get_items_with_cache(self, mock_urlopen):
@@ -52,22 +68,49 @@ class MyHNTest(unittest.TestCase):
             b'{"foo": "bar"}',
             b'{"foo": "bar"}',
         ]
-        user_cache = {}
-        user_cache[1] = {"foo": "bar old"}
+        user_cache = {
+            1: {'foo': 'bar old'}
+        }
         items = myhn.get_items(None, user_cache)
-        self.assertEqual(items[1], {"foo": "bar old"})
-        self.assertEqual(len(items), 3)
+        self.assertEqual(items, {
+            1: {'foo': 'bar old'},
+            2: {'foo': 'bar'},
+            3: {'foo': 'bar'},
+        })
 
     @mock.patch('urllib.request.urlopen')
-    def test_get_items_limit(self, mock_urlopen):
+    def test_get_items_limit_with_no_cache(self, mock_urlopen):
         mock_urlopen().read.side_effect = [
             b'{"submitted": [1, 2, 3]}',
             b'{"foo": "bar"}',
             b'{"foo": "bar"}',
             b'{"foo": "bar"}',
         ]
-        items = myhn.get_items(None, {}, 2)
-        self.assertEqual(len(items), 2)
+        items = myhn.get_items(None, None, 2)
+        self.assertEqual(items, {
+            1: {'foo': 'bar'},
+            2: {'foo': 'bar'},
+        })
+
+    @mock.patch('urllib.request.urlopen')
+    def test_get_items_limit_with_cache(self, mock_urlopen):
+        mock_urlopen().read.side_effect = [
+            b'{"submitted": [1, 2, 3]}',
+            b'{"foo": "bar"}',
+            b'{"foo": "bar"}',
+            b'{"foo": "bar"}',
+        ]
+        user_cache = {
+            1: {'foo': 'bar old'},
+            2: {'foo': 'bar old'},
+            3: {'foo': 'bar old'},
+        }
+        items = myhn.get_items(None, user_cache, 2)
+        self.assertEqual(items, {
+            1: {'foo': 'bar old'},
+            2: {'foo': 'bar old'},
+            3: {'foo': 'bar old'},
+        })
 
     @mock.patch('sys.argv', ['', 'test_user', '-c', 'no_cache.json'])
     @mock.patch('urllib.request.urlopen')
@@ -87,7 +130,7 @@ class MyHNTest(unittest.TestCase):
             'test_user': {
                 '1': {'foo': 'bar'},
                 '2': {'foo': 'bar'},
-                '3': {'foo': 'bar'}
+                '3': {'foo': 'bar'},
             }
         })
 
@@ -122,7 +165,7 @@ class MyHNTest(unittest.TestCase):
             'test_user': {
                 '1': {'foo': 'bar old'},
                 '2': {'foo': 'bar'},
-                '3': {'foo': 'bar'}
+                '3': {'foo': 'bar'},
             },
             'extra_user': {
                 '100': {'foo': 'bar old'}
