@@ -1,5 +1,5 @@
-MyHN
-====
+GetHN
+=====
 
 Get my Hacker News submissions.
 
